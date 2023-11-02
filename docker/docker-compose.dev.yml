@@ -1,0 +1,59 @@
+version: "2"
+
+services:
+  php:
+    container_name: open_loyalty_backend
+    build:
+      context: '../'
+      dockerfile: './docker/dev/php/fpm-dockerfile'
+    links:
+      - db
+      - elk
+      - mail
+    ports:
+      - "9000:9000"
+    volumes:
+        - '../backend:/var/www/openloyalty'
+    env_file:
+        - .env
+    environment:
+      - frontend_customer_panel_url=http://54.161.230.216:8081/client
+      - frontend_password_reset_url=54.161.230.216:8081/client#!/password/reset
+  nginx:
+    container_name: open_loyalty_frontend
+    build:
+      context: '../'
+      dockerfile: './docker/dev/web/backend-dockerfile'
+    links:
+      - php
+    ports:
+      - "80:80"
+  frontend:
+    container_name: open_loyalty_frontend_dev
+    build:
+      context: '../'
+      dockerfile: './docker/dev/web/front-dockerfile'
+    ports:
+      - "8081:8081"
+    volumes:
+      - '../frontend/:/var/www/frontend'
+      - './dev/web/config.js:/var/www/frontend/src/config.js'
+  elk:
+    container_name: open_loyalty_elk
+    build:
+      context: '../'
+      dockerfile: './docker/base/elasticsearch-dockerfile'
+    ports:
+      - "9200:9200"
+  db:
+    container_name: open_loyalty_db
+    image: postgres:9
+    ports:
+      - "5432:5432"
+    env_file:
+        - .env
+  mail:
+    container_name: open_loyalty_mail
+    image: mailhog/mailhog
+    ports:
+      - "8186:8025"
